@@ -1,4 +1,3 @@
-from db.database import Base
 from sqlalchemy import (
   TIMESTAMP,
   Boolean,
@@ -8,6 +7,8 @@ from sqlalchemy import (
   String,
 )
 from sqlalchemy.sql import text
+
+from db.database import Base
 
 DEFAULT_TIMESTAMP = text('now()')
   
