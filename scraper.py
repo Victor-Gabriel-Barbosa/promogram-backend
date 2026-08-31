@@ -27,7 +27,7 @@ import asyncio
 import os
 import re
 from decimal import Decimal, InvalidOperation
-from typing import Any, dict
+from typing import Any
 
 import requests
 from dotenv import load_dotenv
@@ -39,18 +39,18 @@ load_dotenv()
 # --------------------------------------------------------------------------
 # Configuração (lida do .env)
 # --------------------------------------------------------------------------
-API_ID = int(os.getenv("API_ID", "0"))
-API_HASH = os.getenv("API_HASH", "")
+TELEGRAM_API_ID = int(os.getenv("TELEGRAM_API_ID", "0"))
+TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH", "")
 SESSION_NAME = os.getenv("SESSION", "scraper_session")
 
-GRUPOS = [g.strip() for g in os.getenv("GRUPOS", "").split(",") if g.strip()]
-GRUPOS = [int(g) if re.fullmatch(r"-?\d+", g) else g for g in GRUPOS]
+TELEGRAM_GRUPOS = [g.strip() for g in os.getenv("TELEGRAM_GRUPOS", "").split(",") if g.strip()]
+TELEGRAM_GRUPOS = [int(g) if re.fullmatch(r"-?\d+", g) else g for g in TELEGRAM_GRUPOS]
 
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 DOWNLOAD_IMAGENS = os.getenv("DOWNLOAD_IMAGENS", "false").lower() == "true"
 PASTA_IMAGENS = "imagens_baixadas"
 
-client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+client = TelegramClient(SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
 
 
 # --------------------------------------------------------------------------
@@ -227,7 +227,7 @@ async def baixar_imagem(message) -> str | None:
 # --------------------------------------------------------------------------
 # Modo tempo real: escuta mensagens novas
 # --------------------------------------------------------------------------
-@client.on(events.NewMessage(chats=GRUPOS or None))
+@client.on(events.NewMessage(chats=TELEGRAM_GRUPOS or None))
 async def handler(event):
     texto = event.raw_text
     if not texto or len(texto.strip()) < 5:
@@ -283,22 +283,22 @@ async def main() -> None:
     )
     args = parser.parse_args()
 
-    if not API_ID or not API_HASH:
+    if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
         raise SystemExit(
             "Defina TELEGRAM_API_ID e TELEGRAM_API_HASH no .env "
             "(gere em https://my.telegram.org)"
         )
-    if not GRUPOS:
+    if not TELEGRAM_GRUPOS:
         raise SystemExit("Defina TELEGRAM_GRUPOS no .env (lista separada por vírgula)")
 
     await client.start()
 
     if args.historico:
-        for grupo in GRUPOS:
+        for grupo in TELEGRAM_GRUPOS:
             await escanear_historico(grupo, args.limite)
         print("Escaneamento de histórico concluído.")
     else:
-        print("Cliente conectado. Escutando grupos em tempo real:", GRUPOS)
+        print("Cliente conectado. Escutando grupos em tempo real:", TELEGRAM_GRUPOS)
         await client.run_until_disconnected()
 
 
