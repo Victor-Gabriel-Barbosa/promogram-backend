@@ -191,6 +191,14 @@ def enviar_para_api(tipo: str, payload: dict[str, Any]) -> None:
     if tipo == "cupom" and not payload.get("codigo"):
         print(f"[SKIP] cupom sem código identificado: {payload}")
         return
+    if (
+        tipo == "produto"
+        and payload.get("preco") is None
+        and payload.get("preco_parcelado") is None
+        and not payload.get("cupom")
+    ):
+        print(f"[SKIP] produto sem preço nem cupom (só nome/link): {payload['nome']}")
+        return
 
     payload_json = {
         k: (str(v) if isinstance(v, Decimal) else v) for k, v in payload.items()
