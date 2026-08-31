@@ -32,7 +32,6 @@ Coleta automaticamente ofertas e cupons publicados em grupos/canais do Telegram,
 - [Executando localmente](#️-executando-localmente)
 - [Sessão do Telegram em produção](#-sessão-do-telegram-em-produção)
 - [Deploy](#️-deploy)
-- [Possíveis melhorias](#-possíveis-melhorias)
 - [Licença](#-licença)
 - [Autor](#-autor)
 
@@ -154,8 +153,6 @@ promogram-backend/
 | `GET` | `/scraper/status` | Consulta o status atual do scraper | `200` |
 
 Com a API rodando, a documentação interativa (Swagger) fica disponível em `/docs` e o esquema OpenAPI em `/openapi.json`.
-
-> ⚠️ Atualmente as rotas de escrita (`POST`/`PUT`/`DELETE`) não possuem autenticação — veja [Possíveis melhorias](#-possíveis-melhorias).
 
 ## ✅ Pré-requisitos
 
