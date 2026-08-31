@@ -32,16 +32,20 @@ from typing import Any
 import requests
 from dotenv import load_dotenv
 from telethon import TelegramClient, events
+from telethon.sessions import StringSession
 from telethon.tl.types import MessageMediaPhoto
 
 load_dotenv()
 
 # --------------------------------------------------------------------------
-# Configuração (lida do .env)
+# Configuração
 # --------------------------------------------------------------------------
 TELEGRAM_API_ID = int(os.getenv("TELEGRAM_API_ID", "0"))
 TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH", "")
+
+TELEGRAM_SESSION_STRING = os.getenv("TELEGRAM_SESSION_STRING", "")
 SESSION_NAME = os.getenv("SESSION", "scraper_session")
+_SESSION = StringSession(TELEGRAM_SESSION_STRING) if TELEGRAM_SESSION_STRING else SESSION_NAME
 
 TELEGRAM_GRUPOS = [g.strip() for g in os.getenv("TELEGRAM_GRUPOS", "").split(",") if g.strip()]
 TELEGRAM_GRUPOS = [int(g) if re.fullmatch(r"-?\d+", g) else g for g in TELEGRAM_GRUPOS]
@@ -50,7 +54,7 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 DOWNLOAD_IMAGENS = os.getenv("DOWNLOAD_IMAGENS", "false").lower() == "true"
 PASTA_IMAGENS = "imagens_baixadas"
 
-client = TelegramClient(SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+client = TelegramClient(_SESSION, TELEGRAM_API_ID, TELEGRAM_API_HASH)
 
 # Trava para impedir que dois disparos do scraper rodem ao mesmo tempo
 _scraper_lock = asyncio.Lock()
@@ -146,7 +150,6 @@ def eh_mensagem_de_cupom(texto: str) -> bool:
 
 
 def parse_mensagem(texto: str) -> dict[str, Any]:
-    """Decide se a mensagem é Produto ou Cupom e monta o payload pronto pra API."""
     if eh_mensagem_de_cupom(texto):
         return {
             "tipo": "cupom",
@@ -189,7 +192,6 @@ def enviar_para_api(tipo: str, payload: dict[str, Any]) -> None:
         print(f"[SKIP] cupom sem código identificado: {payload}")
         return
 
-    # Decimal não é serializável em JSON por padrão -> converte pra string
     payload_json = {
         k: (str(v) if isinstance(v, Decimal) else v) for k, v in payload.items()
     }
