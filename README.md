@@ -261,14 +261,6 @@ Há também um `Procfile`, tipicamente usado por plataformas como Heroku/Railway
 
 O repositório também lista uma instância publicada em `promogram-backend.vercel.app`. Vale lembrar que ambientes serverless como a Vercel são adequados para a **API** (funções de curta duração), mas não sustentam o **modo tempo real** do scraper, que precisa de um processo contínuo — para isso, prefira um *worker* dedicado (Render, VPS) ou dispare execuções pontuais via `POST /scraper/executar`.
 
-## 🚀 Possíveis melhorias
-
-- Autenticação/autorização nas rotas de escrita da API.
-- Testes automatizados (unitários para as heurísticas de regex e de integração para os endpoints).
-- Armazenamento de imagens em um serviço externo (S3, Cloudinary) em vez do disco local.
-- Metadados de paginação (total de itens) nas rotas de listagem.
-- Arquivo `.env.example` versionado como referência de configuração.
-
 ## 📄 Licença
 
 Distribuído sob a licença **MIT**. Veja [LICENSE](LICENSE) para mais detalhes.
