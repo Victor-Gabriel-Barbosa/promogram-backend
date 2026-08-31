@@ -150,11 +150,12 @@ def eh_mensagem_de_cupom(texto: str) -> bool:
 
 
 def parse_mensagem(texto: str) -> dict[str, Any]:
-    if eh_mensagem_de_cupom(texto):
+    nome = extrair_nome(texto)
+    if eh_mensagem_de_cupom(nome):
         return {
             "tipo": "cupom",
             "payload": {
-                "nome": extrair_nome(texto),
+                "nome": nome,
                 "codigo": extrair_cupom_codigo(texto),
                 "desconto": extrair_desconto(texto),
                 "limite_minimo": extrair_limite_minimo(texto),
@@ -168,7 +169,7 @@ def parse_mensagem(texto: str) -> dict[str, Any]:
     return {
         "tipo": "produto",
         "payload": {
-            "nome": extrair_nome(texto),
+            "nome": nome,
             "preco": preco,
             "preco_parcelado": preco_parcelado,
             "link": extrair_link(texto),
