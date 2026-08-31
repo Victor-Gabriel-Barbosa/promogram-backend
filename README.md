@@ -32,7 +32,6 @@ Coleta automaticamente ofertas e cupons publicados em grupos/canais do Telegram,
 - [Executando localmente](#️-executando-localmente)
 - [Sessão do Telegram em produção](#-sessão-do-telegram-em-produção)
 - [Deploy](#️-deploy)
-- [Possíveis melhorias](#-possíveis-melhorias)
 - [Licença](#-licença)
 - [Autor](#-autor)
 
@@ -155,8 +154,6 @@ promogram-backend/
 
 Com a API rodando, a documentação interativa (Swagger) fica disponível em `/docs` e o esquema OpenAPI em `/openapi.json`.
 
-> ⚠️ Atualmente as rotas de escrita (`POST`/`PUT`/`DELETE`) não possuem autenticação — veja [Possíveis melhorias](#-possíveis-melhorias).
-
 ## ✅ Pré-requisitos
 
 - Python 3.11 ou superior
@@ -260,14 +257,6 @@ services:
 Há também um `Procfile`, tipicamente usado por plataformas como Heroku/Railway para subir o scraper como um *worker* separado — nesse caso, garanta que o comando aponte para o nome atual do arquivo (`scraper.py`).
 
 O repositório também lista uma instância publicada em `promogram-backend.vercel.app`. Vale lembrar que ambientes serverless como a Vercel são adequados para a **API** (funções de curta duração), mas não sustentam o **modo tempo real** do scraper, que precisa de um processo contínuo — para isso, prefira um *worker* dedicado (Render, VPS) ou dispare execuções pontuais via `POST /scraper/executar`.
-
-## 🚀 Possíveis melhorias
-
-- Autenticação/autorização nas rotas de escrita da API.
-- Testes automatizados (unitários para as heurísticas de regex e de integração para os endpoints).
-- Armazenamento de imagens em um serviço externo (S3, Cloudinary) em vez do disco local.
-- Metadados de paginação (total de itens) nas rotas de listagem.
-- Arquivo `.env.example` versionado como referência de configuração.
 
 ## 📄 Licença
 
