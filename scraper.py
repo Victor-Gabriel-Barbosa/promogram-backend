@@ -52,6 +52,9 @@ PASTA_IMAGENS = "imagens_baixadas"
 
 client = TelegramClient(SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
 
+# Trava para impedir que dois disparos do scraper rodem ao mesmo tempo
+_scraper_lock = asyncio.Lock()
+
 
 # --------------------------------------------------------------------------
 # Extração de dados (heurísticas via regex)
@@ -82,7 +85,6 @@ def _to_decimal(valor_str: str | None) -> Decimal | None:
 
 
 def extrair_nome(texto: str) -> str:
-    """Usa a primeira linha 'útil' da mensagem (ignora links e preços soltos)."""
     linhas = [l.strip() for l in texto.split("\n") if l.strip()]
     for linha in linhas:
         if LINK_RE.fullmatch(linha):
@@ -99,12 +101,6 @@ def extrair_link(texto: str) -> str | None:
 
 
 def extrair_precos(texto: str) -> tuple[Decimal | None, Decimal | None]:
-    """Retorna (preco, preco_parcelado).
-
-    Prioriza os padrões mais específicos comuns em posts de promoção:
-    "por R$ X" -> preço à vista / final; "R$ Y em 10x" -> preço parcelado.
-    Se nenhum desses padrões aparecer, cai para o primeiro valor monetário
-    encontrado (fallback simples, sem garantias)."""
     preco: Decimal | None = None
     preco_parcelado: Decimal | None = None
 
@@ -125,7 +121,6 @@ def extrair_precos(texto: str) -> tuple[Decimal | None, Decimal | None]:
 
 
 def extrair_cupom_codigo(texto: str) -> str | None:
-    """Prioriza 'código: XYZ' (mais explícito); cai para 'cupom XYZ' depois."""
     m = CODIGO_RE.search(texto)
     if m:
         return m.group(1).upper()
@@ -144,9 +139,6 @@ def extrair_limite_minimo(texto: str) -> Decimal | None:
 
 
 def eh_mensagem_de_cupom(texto: str) -> bool:
-    """Heurística: menciona cupom/código E não tem preço final de um produto
-    específico (padrão 'por R$ X'). Se tiver os dois, tratamos como Produto
-    com cupom embutido (o campo 'cupom' do Produto cobre esse caso)."""
     texto_lower = texto.lower()
     tem_palavra_cupom = any(p in texto_lower for p in PALAVRAS_CUPOM)
     tem_preco_de_produto = POR_RE.search(texto) is not None
@@ -265,8 +257,43 @@ async def escanear_historico(grupo, limite: int) -> None:
         enviar_para_api(resultado["tipo"], resultado["payload"])
 
 
+def _validar_configuracao() -> None:
+    if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
+        raise RuntimeError(
+            "Defina TELEGRAM_API_ID e TELEGRAM_API_HASH no .env "
+            "(gere em https://my.telegram.org)"
+        )
+    if not TELEGRAM_GRUPOS:
+        raise RuntimeError("Defina TELEGRAM_GRUPOS no .env (lista separada por vírgula)")
+
+
+async def _conectar_se_necessario() -> None:
+    if not client.is_connected():
+        await client.start()
+
+
+async def executar_historico(limite: int = 200) -> dict[str, Any]:
+    if _scraper_lock.locked():
+        return {"status": "ja_em_execucao"}
+
+    async with _scraper_lock:
+        _validar_configuracao()
+        await _conectar_se_necessario()
+        for grupo in TELEGRAM_GRUPOS:
+            await escanear_historico(grupo, limite)
+        print("Escaneamento de histórico concluído.")
+        return {"status": "concluido", "grupos": TELEGRAM_GRUPOS, "limite": limite}
+
+
+async def executar_tempo_real() -> None:
+    _validar_configuracao()
+    await _conectar_se_necessario()
+    print("Cliente conectado. Escutando grupos em tempo real:", TELEGRAM_GRUPOS)
+    await client.run_until_disconnected()
+
+
 # --------------------------------------------------------------------------
-# Entrypoint
+# Entrypoint (CLI)
 # --------------------------------------------------------------------------
 async def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -283,23 +310,14 @@ async def main() -> None:
     )
     args = parser.parse_args()
 
-    if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
-        raise SystemExit(
-            "Defina TELEGRAM_API_ID e TELEGRAM_API_HASH no .env "
-            "(gere em https://my.telegram.org)"
-        )
-    if not TELEGRAM_GRUPOS:
-        raise SystemExit("Defina TELEGRAM_GRUPOS no .env (lista separada por vírgula)")
-
-    await client.start()
-
-    if args.historico:
-        for grupo in TELEGRAM_GRUPOS:
-            await escanear_historico(grupo, args.limite)
-        print("Escaneamento de histórico concluído.")
-    else:
-        print("Cliente conectado. Escutando grupos em tempo real:", TELEGRAM_GRUPOS)
-        await client.run_until_disconnected()
+    try:
+        if args.historico:
+            resultado = await executar_historico(args.limite)
+            print(resultado)
+        else:
+            await executar_tempo_real()
+    except RuntimeError as e:
+        raise SystemExit(str(e)) from e
 
 
 if __name__ == "__main__":
