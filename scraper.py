@@ -29,6 +29,7 @@ import re
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
+import emoji
 import requests
 from dotenv import load_dotenv
 from telethon import TelegramClient, events
@@ -233,6 +234,10 @@ async def baixar_imagem(message) -> str | None:
 @client.on(events.NewMessage(chats=TELEGRAM_GRUPOS or None))
 async def handler(event):
     texto = event.raw_text
+    
+    if texto:
+        texto = emoji.replace_emoji(texto, replace="")
+        
     if not texto or len(texto.strip()) < 5:
         return
 
@@ -255,6 +260,10 @@ async def escanear_historico(grupo, limite: int) -> None:
     print(f"Escaneando histórico de '{grupo}' (últimas {limite} mensagens)...")
     async for message in client.iter_messages(grupo, limit=limite):
         texto = message.raw_text
+        
+        if texto:
+            texto = emoji.replace_emoji(texto, replace="")
+            
         if not texto or len(texto.strip()) < 5:
             continue
 
