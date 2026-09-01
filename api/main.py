@@ -5,10 +5,10 @@ from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Response, 
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-import scraper
-from db import models
-from db.database import engine, get_db
-from db.schemas import (
+import scraper.scraper as scraper
+from api import models
+from api.database import engine, get_db
+from api.schemas import (
     Cupom,
     CupomResponse,
     Produto,

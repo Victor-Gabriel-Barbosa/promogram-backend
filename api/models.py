@@ -8,7 +8,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.sql import text
 
-from db.database import Base
+from api.database import Base
 
 DEFAULT_TIMESTAMP = text('now()')
   
