@@ -93,17 +93,15 @@ flowchart LR
 
 ```
 promogram-backend/
-├── db/
-│   ├── __init__.py
+├── api/
+│   ├── main.py          # aplicação FastAPI (rotas da API)
 │   ├── database.py      # engine, sessão e Base do SQLAlchemy
 │   ├── models.py        # modelos ORM (Produto, Cupom)
 │   └── schemas.py       # schemas Pydantic de entrada/saída
-├── gerar_sessao.py      # gera uma StringSession do Telethon para produção
-├── scraper.py           # scraper de grupos/canais do Telegram
-├── main.py              # aplicação FastAPI (rotas da API)
+├── scraper/
+│   ├── gerar_sessao.py  # gera uma StringSession do Telethon para produção
+│   └── scraper.py       # scraper de grupos/canais do Telegram
 ├── requirements.txt
-├── Procfile             # comando de start do worker do scraper
-├── Render.yml           # configuração de deploy da API no Render
 └── LICENSE
 ```
 
