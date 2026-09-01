@@ -237,6 +237,7 @@ async def handler(event):
     
     if texto:
         texto = emoji.replace_emoji(texto, replace="")
+        texto = re.sub(r'#\w+', '', texto)
         
     if not texto or len(texto.strip()) < 5:
         return
@@ -263,6 +264,7 @@ async def escanear_historico(grupo, limite: int) -> None:
         
         if texto:
             texto = emoji.replace_emoji(texto, replace="")
+            texto = re.sub(r'#\w+', '', texto)
             
         if not texto or len(texto.strip()) < 5:
             continue
