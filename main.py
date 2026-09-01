@@ -31,7 +31,6 @@ app.add_middleware(
 
 DbSession = Annotated[Session, Depends(get_db)]
 
-# Estado em memória do scraper para impedir que dois disparos do scraper rodem ao mesmo tempo
 scraper_status: dict[str, Any] = {"em_execucao": False, "modo": None, "ultimo_resultado": None}
 
 
@@ -107,12 +106,18 @@ async def criar_cupom(cupom: Cupom, db: DbSession):
   return {"Cupom": novo_cupom}
 
 @app.get("/produtos", response_model=list[ProdutoResponse], status_code=status.HTTP_200_OK)
-async def buscar_produtos(db: DbSession, skip: int = 0, limit: int = 100):
-  return db.query(models.Produto).offset(skip).limit(limit).all()
+async def buscar_produtos(db: DbSession, skip: int = 0, limit: int = 100, nome: str | None = None):
+  query = db.query(models.Produto)
+  if nome:
+    query = query.filter(models.Produto.nome.ilike(f"%{nome}%"))
+  return query.offset(skip).limit(limit).all()
 
 @app.get("/cupons", response_model=list[CupomResponse], status_code=status.HTTP_200_OK)
-async def buscar_cupons(db: DbSession, skip: int = 0, limit: int = 100):
-  return db.query(models.Cupom).offset(skip).limit(limit).all()
+async def buscar_cupons(db: DbSession, skip: int = 0, limit: int = 100, nome: str | None = None):
+  query = db.query(models.Cupom)
+  if nome:
+    query = query.filter(models.Cupom.nome.ilike(f"%{nome}%"))
+  return query.offset(skip).limit(limit).all()
 
 @app.put("/produtos/{produto_id}", response_model=ProdutoResponse, status_code=status.HTTP_200_OK)
 async def atualizar_produto(produto_id: int, produto: Produto, db: DbSession):
