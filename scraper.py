@@ -68,8 +68,8 @@ PRICE_RE = re.compile(rf"r\$\s*({PRICE_TOKEN})", re.IGNORECASE)
 POR_RE = re.compile(rf"por\s*(?:apenas\s*)?r\$\s*({PRICE_TOKEN})", re.IGNORECASE)
 PARCELADO_RE = re.compile(rf"r\$\s*({PRICE_TOKEN})\s*(?:em\s*)?\d{{1,2}}\s*x", re.IGNORECASE)
 LINK_RE = re.compile(r"(https?://\S+)")
-CODIGO_RE = re.compile(r"c[oó]digo[:\s]*([A-Z0-9\-]{3,20})", re.IGNORECASE)
-CUPOM_RE = re.compile(r"cupom[:\s]*([A-Z0-9\-]{3,20})", re.IGNORECASE)
+CODIGO_RE = re.compile(r"c[oó]digo[:\s]*(.+)", re.IGNORECASE)
+CUPOM_RE = re.compile(r"cupom[:\s]*(.+)", re.IGNORECASE)
 DESCONTO_RE = re.compile(r"(\d{1,3}\s?%\s?(?:off|de desconto)?)", re.IGNORECASE)
 LIMITE_MINIMO_RE = re.compile(
     rf"(?:m[ií]nimo|acima de)[:\s]*r\$\s*({PRICE_TOKEN})", re.IGNORECASE
