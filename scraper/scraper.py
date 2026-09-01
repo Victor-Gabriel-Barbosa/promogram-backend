@@ -96,7 +96,12 @@ def extrair_nome(texto: str) -> str:
             continue
         if PRICE_RE.fullmatch(linha):
             continue
-        return linha[:255]
+        
+        nome = linha[:255]
+        nome = re.sub(rf"(?:-?\s*)?r\$\s*(?:{PRICE_TOKEN})", "", nome, flags=re.IGNORECASE)
+        nome = nome.strip(" -")
+        
+        return nome or "Produto sem nome"
     return "Produto sem nome"
 
 
