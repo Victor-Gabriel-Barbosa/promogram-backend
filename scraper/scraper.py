@@ -64,19 +64,20 @@ _scraper_lock = asyncio.Lock()
 # --------------------------------------------------------------------------
 # Extração de dados (heurísticas via regex)
 # --------------------------------------------------------------------------
-PRICE_TOKEN = r"[\d.]+,\d{2}|\d+"
-PRICE_RE = re.compile(rf"r\$\s*({PRICE_TOKEN})", re.IGNORECASE)
-POR_RE = re.compile(rf"por\s*(?:apenas\s*)?r\$\s*({PRICE_TOKEN})", re.IGNORECASE)
-PARCELADO_RE = re.compile(rf"r\$\s*({PRICE_TOKEN})\s*(?:em\s*)?\d{{1,2}}\s*x", re.IGNORECASE)
+TOKEN_PRECO = r"[\d.]+,\d{2}|\d+"
+PRECO_RE = re.compile(rf"r\$\s*({TOKEN_PRECO})", re.IGNORECASE)
+REMOVE_PRECO_RE = re.compile(rf"(?:-?\s*)?r\$\s*(?:{TOKEN_PRECO})", re.IGNORECASE)
+POR_RE = re.compile(rf"por\s*(?:apenas\s*)?r\$\s*({TOKEN_PRECO})", re.IGNORECASE)
+PARCELADO_RE = re.compile(rf"r\$\s*({TOKEN_PRECO})\s*(?:em\s*)?\d{{1,2}}\s*x", re.IGNORECASE)
 LINK_RE = re.compile(r"(https?://\S+)")
 CODIGO_RE = re.compile(r"c[oó]digo[:\s]*(.+)", re.IGNORECASE)
 CUPOM_RE = re.compile(r"cupom[:\s]*(.+)", re.IGNORECASE)
 DESCONTO_RE = re.compile(r"(\d{1,3}\s?%\s?(?:off|de desconto)?)", re.IGNORECASE)
 LIMITE_MINIMO_RE = re.compile(
-    rf"(?:m[ií]nimo|acima de)[:\s]*r\$\s*({PRICE_TOKEN})", re.IGNORECASE
+    rf"(?:m[ií]nimo|acima de)[:\s]*r\$\s*({TOKEN_PRECO})", re.IGNORECASE
 )
 
-PALAVRAS_CUPOM = ["cupom", "código promocional", "code:"]
+PALAVRAS_CUPOM = ["cupom", "cupons", "código promocional", "code:"]
 
 
 def _to_decimal(valor_str: str | None) -> Decimal | None:
@@ -94,11 +95,11 @@ def extrair_nome(texto: str) -> str:
     for linha in linhas:
         if LINK_RE.fullmatch(linha):
             continue
-        if PRICE_RE.fullmatch(linha):
+        if PRECO_RE.fullmatch(linha):
             continue
         
         nome = linha[:255]
-        nome = re.sub(rf"(?:-?\s*)?r\$\s*(?:{PRICE_TOKEN})", "", nome, flags=re.IGNORECASE)
+        nome = REMOVE_PRECO_RE.sub("", nome)
         nome = nome.strip(" -")
         
         return nome or "Produto sem nome"
@@ -121,7 +122,7 @@ def extrair_precos(texto: str) -> tuple[Decimal | None, Decimal | None]:
         preco_parcelado = _to_decimal(m_parcelado.group(1))
 
     if preco is None:
-        todos = [_to_decimal(p) for p in PRICE_RE.findall(texto)]
+        todos = [_to_decimal(p) for p in PRECO_RE.findall(texto)]
         if todos := [
             p for p in todos if p is not None and p != preco_parcelado
         ]:
