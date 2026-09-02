@@ -106,10 +106,21 @@ async def criar_cupom(cupom: Cupom, db: DbSession):
   return {"Cupom": novo_cupom}
 
 @app.get("/produtos", response_model=list[ProdutoResponse], status_code=status.HTTP_200_OK)
-async def buscar_produtos(db: DbSession, skip: int = 0, limit: int = 100, nome: str | None = None):
+async def buscar_produtos(
+    db: DbSession, 
+    skip: int = 0, 
+    limit: int = 100, 
+    nome: str | None = None,
+    preco_min: float | None = None,
+    preco_max: float | None = None
+):
   query = db.query(models.Produto)
   if nome:
     query = query.filter(models.Produto.nome.ilike(f"%{nome}%"))
+  if preco_min is not None:
+    query = query.filter(models.Produto.preco >= preco_min)
+  if preco_max is not None:
+    query = query.filter(models.Produto.preco <= preco_max) 
   return query.offset(skip).limit(limit).all()
 
 @app.get("/cupons", response_model=list[CupomResponse], status_code=status.HTTP_200_OK)
