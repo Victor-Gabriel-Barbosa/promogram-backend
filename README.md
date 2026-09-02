@@ -41,8 +41,8 @@ Coleta automaticamente ofertas e cupons publicados em grupos/canais do Telegram,
 
 O **Promogram Backend** é o serviço que dá suporte ao Promogram, um agregador de promoções e cupons. O sistema é composto por duas partes que trabalham juntas:
 
-1. Um **scraper** (`scraper.py`) que se conecta a grupos e canais do Telegram usando [Telethon](https://docs.telethon.dev/) e interpreta as mensagens publicadas para identificar se tratam de um **Produto** em oferta ou de um **Cupom** de desconto;
-2. Uma **API REST** (`main.py`), construída com [FastAPI](https://fastapi.tiangolo.com/), que recebe esses dados, persiste em um banco **PostgreSQL** e os disponibiliza para um frontend consumir.
+1. Um **scraper** (`scraper.py`) que se conecta a grupos e canais do Telegram usando Telethon e interpreta as mensagens publicadas para identificar se tratam de um **Produto** em oferta ou de um **Cupom** de desconto;
+2. Uma **API REST** (`main.py`), construída com FastAPI, que recebe esses dados, persiste em um banco **PostgreSQL** e os disponibiliza para um frontend consumir.
 
 O nome remete à junção de **Promoção + Telegram** — a origem das ofertas que o sistema coleta.
 
@@ -63,12 +63,12 @@ flowchart LR
 1. O scraper escuta mensagens novas em tempo real **ou** varre o histórico de mensagens de cada grupo configurado.
 2. Cada texto é analisado por expressões regulares para extrair nome, preço, preço parcelado, link, código de cupom, percentual de desconto e valor mínimo de compra.
 3. O resultado é classificado como `produto` ou `cupom` e enviado via HTTP para a API (`/produtos` ou `/cupons`).
-4. A API valida os dados com **Pydantic**, persiste com **SQLAlchemy** e os deixa disponíveis via endpoints REST paginados.
+4. A API valida os dados com **Pydantic**, persiste com **SQLAlchemy** e os deixa disponíveis via endpoints REST paginados e com suporte a filtros dinâmicos.
 5. A própria API expõe um endpoint (`/scraper/executar`) para disparar o scraper remotamente em background, com trava para impedir execuções concorrentes.
 
 ## ✨ Funcionalidades
 
-- CRUD completo de **produtos** e **cupons** promocionais.
+- CRUD completo de **produtos** e **cupons** promocionais, incluindo filtros avançados por nome e faixa de preço (mínimo/máximo).
 - Scraper de mensagens do Telegram em **modo tempo real** e **modo histórico** (com limite configurável).
 - Extração automática por regex de preço, preço parcelado, cupom, percentual de desconto, valor mínimo de compra e link.
 - Download opcional das imagens anexadas às mensagens (`DOWNLOAD_IMAGENS`).
@@ -91,7 +91,7 @@ flowchart LR
 
 ## 📁 Estrutura do projeto
 
-```
+```text
 promogram-backend/
 ├── api/
 │   ├── main.py          # aplicação FastAPI (rotas da API)
@@ -140,11 +140,11 @@ promogram-backend/
 | Método | Rota | Descrição | Sucesso |
 |---|---|---|---|
 | `POST` | `/produtos` | Cria um produto | `201` |
-| `GET` | `/produtos` | Lista produtos (`skip`, `limit`) | `200` |
+| `GET` | `/produtos` | Lista produtos (`skip`, `limit`, `nome`, `preco_min`, `preco_max`) | `200` |
 | `PUT` | `/produtos/{produto_id}` | Atualiza um produto | `200` / `404` |
 | `DELETE` | `/produtos/{produto_id}` | Remove um produto | `204` / `404` |
 | `POST` | `/cupons` | Cria um cupom | `201` |
-| `GET` | `/cupons` | Lista cupons (`skip`, `limit`) | `200` |
+| `GET` | `/cupons` | Lista cupons (`skip`, `limit`, `nome`) | `200` |
 | `PUT` | `/cupons/{cupom_id}` | Atualiza um cupom | `200` / `404` |
 | `DELETE` | `/cupons/{cupom_id}` | Remove um cupom | `204` / `404` |
 | `POST` | `/scraper/executar` | Dispara o scraper em background (`modo=historico\|tempo_real`, `limite`) | `202` / `409` se já em execução |
@@ -156,7 +156,7 @@ Com a API rodando, a documentação interativa (Swagger) fica disponível em `/d
 
 - Python 3.11 ou superior
 - Um banco **PostgreSQL** (local ou hospedado — Render, Supabase, Neon etc.)
-- Credenciais de API do Telegram em [my.telegram.org](https://my.telegram.org) (necessárias apenas para usar o scraper)
+- Credenciais de API do Telegram em my.telegram.org (necessárias apenas para usar o scraper)
 
 ## 🚀 Instalação
 
@@ -208,7 +208,7 @@ DOWNLOAD_IMAGENS=false
 **API**
 
 ```bash
-uvicorn main:app --reload
+uvicorn api.main:app --reload
 ```
 
 A API sobe em `http://localhost:8000` e a documentação interativa em `http://localhost:8000/docs`.
@@ -216,9 +216,9 @@ A API sobe em `http://localhost:8000` e a documentação interativa em `http://l
 **Scraper**
 
 ```bash
-python scraper.py                       # escuta mensagens novas em tempo real
-python scraper.py --historico            # varre as últimas 200 mensagens de cada grupo
-python scraper.py --historico --limite 500
+python scraper/scraper.py                          # escuta mensagens novas em tempo real
+python scraper/scraper.py --historico              # varre as últimas 200 mensagens de cada grupo
+python scraper/scraper.py --historico --limite 500
 ```
 
 ## 🔑 Sessão do Telegram em produção
@@ -226,7 +226,7 @@ python scraper.py --historico --limite 500
 Em ambientes sem disco persistente (Vercel, Lambda, containers efêmeros), o Telethon precisa de uma **StringSession** em vez de um arquivo de sessão local. Para gerar uma:
 
 ```bash
-python gerar_sessao.py
+python scraper/gerar_sessao.py
 ```
 
 O script solicita seu número de telefone e o código enviado pelo Telegram e, ao final, imprime uma string. Copie-a e defina como a variável de ambiente `TELEGRAM_SESSION_STRING` no seu provedor de hospedagem (marcada como secreta).
@@ -235,7 +235,7 @@ O script solicita seu número de telefone e o código enviado pelo Telegram e, a
 
 ## ☁️ Deploy
 
-O projeto inclui um `Render.yml` para deploy da API no [Render](https://render.com/):
+O projeto inclui um `Render.yml` para deploy da API no Render:
 
 ```yaml
 services:
@@ -244,7 +244,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -252,7 +252,7 @@ services:
         sync: false
 ```
 
-Há também um `Procfile`, tipicamente usado por plataformas como Heroku/Railway para subir o scraper como um *worker* separado — nesse caso, garanta que o comando aponte para o nome atual do arquivo (`scraper.py`).
+Há também um `Procfile`, tipicamente usado por plataformas como Heroku/Railway para subir o scraper como um *worker* separado — nesse caso, garanta que o comando aponte para o nome atual do arquivo (`scraper/scraper.py`).
 
 O repositório também lista uma instância publicada em `promogram-backend.vercel.app`. Vale lembrar que ambientes serverless como a Vercel são adequados para a **API** (funções de curta duração), mas não sustentam o **modo tempo real** do scraper, que precisa de um processo contínuo — para isso, prefira um *worker* dedicado (Render, VPS) ou dispare execuções pontuais via `POST /scraper/executar`.
 
@@ -263,4 +263,4 @@ Distribuído sob a licença **MIT**. Veja [LICENSE](LICENSE) para mais detalhes.
 ## 👤 Autor
 
 **Victor Gabriel Barbosa**
-GitHub: [@Victor-Gabriel-Barbosa](https://github.com/Victor-Gabriel-Barbosa)
+GitHub: @Victor-Gabriel-Barbosa
