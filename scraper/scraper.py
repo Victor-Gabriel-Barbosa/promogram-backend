@@ -64,7 +64,7 @@ _scraper_lock = asyncio.Lock()
 # --------------------------------------------------------------------------
 # Extração de dados (heurísticas via regex)
 # --------------------------------------------------------------------------
-TOKEN_PRECO = r"[\d.]+,\d{2}|\d+"
+TOKEN_PRECO = r"\d{1,3}(?:\.\d{3})+,\d{1,2}|\d+,\d{1,2}|\d{1,3}(?:\.\d{3})+|\d+"
 PRECO_RE = re.compile(rf"r\$\s*({TOKEN_PRECO})", re.IGNORECASE)
 REMOVE_PRECO_RE = re.compile(rf"(?:-?\s*)?r\$\s*(?:{TOKEN_PRECO})", re.IGNORECASE)
 POR_RE = re.compile(rf"por\s*(?:apenas\s*)?r\$\s*({TOKEN_PRECO})", re.IGNORECASE)
