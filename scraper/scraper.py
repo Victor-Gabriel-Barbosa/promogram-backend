@@ -24,6 +24,8 @@ Uso:
 
 import argparse
 import asyncio
+import base64
+import io
 import os
 import re
 from decimal import Decimal, InvalidOperation
@@ -43,21 +45,13 @@ load_dotenv()
 # --------------------------------------------------------------------------
 TELEGRAM_API_ID = int(os.getenv("TELEGRAM_API_ID", "0"))
 TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH", "")
-
 TELEGRAM_SESSION_STRING = os.getenv("TELEGRAM_SESSION_STRING", "")
 SESSION_NAME = os.getenv("SESSION", "scraper_session")
 _SESSION = StringSession(TELEGRAM_SESSION_STRING) if TELEGRAM_SESSION_STRING else SESSION_NAME
-
 TELEGRAM_GRUPOS = [g.strip() for g in os.getenv("TELEGRAM_GRUPOS", "").split(",") if g.strip()]
 TELEGRAM_GRUPOS = [int(g) if re.fullmatch(r"-?\d+", g) else g for g in TELEGRAM_GRUPOS]
-
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
-DOWNLOAD_IMAGENS = os.getenv("DOWNLOAD_IMAGENS", "false").lower() == "true"
-PASTA_IMAGENS = "imagens_baixadas"
-
 client = TelegramClient(_SESSION, TELEGRAM_API_ID, TELEGRAM_API_HASH)
-
-# Trava para impedir que dois disparos do scraper rodem ao mesmo tempo
 _scraper_lock = asyncio.Lock()
 
 
@@ -223,15 +217,16 @@ def enviar_para_api(tipo: str, payload: dict[str, Any]) -> None:
 
 
 # --------------------------------------------------------------------------
-# Download opcional de imagem
+# Download de imagem em Base64
 # --------------------------------------------------------------------------
 async def baixar_imagem(message) -> str | None:
-    if not DOWNLOAD_IMAGENS:
-        return None
+    """Baixa a foto da mensagem para memória e retorna como data URI Base64."""
     if not message.media or not isinstance(message.media, MessageMediaPhoto):
         return None
-    os.makedirs(PASTA_IMAGENS, exist_ok=True)
-    return await message.download_media(file=PASTA_IMAGENS)
+    buffer = io.BytesIO()
+    await message.download_media(file=buffer)
+    dados_b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    return f"data:image/jpeg;base64,{dados_b64}"
 
 
 # --------------------------------------------------------------------------
@@ -300,7 +295,7 @@ async def _conectar_se_necessario() -> None:
         await client.start()
 
 
-async def executar_historico(limite: int = 200) -> dict[str, Any]:
+async def executar_historico(limite: int = 100) -> dict[str, Any]:
     if _scraper_lock.locked():
         return {"status": "ja_em_execucao"}
 
