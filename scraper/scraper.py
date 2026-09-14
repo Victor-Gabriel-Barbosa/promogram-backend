@@ -18,7 +18,7 @@ Configuração:
 
 Uso:
     python telegram_scraper.py                 # escuta mensagens novas em tempo real
-    python telegram_scraper.py --historico      # varre mensagens antigas dos grupos
+    python telegram_scraper.py --historico     # varre mensagens antigas dos grupos
     python telegram_scraper.py --historico --limite 500
 """
 
@@ -220,7 +220,6 @@ def enviar_para_api(tipo: str, payload: dict[str, Any]) -> None:
 # Download de imagem em Base64
 # --------------------------------------------------------------------------
 async def baixar_imagem(message) -> str | None:
-    """Baixa a foto da mensagem para memória e retorna como data URI Base64."""
     if not message.media or not isinstance(message.media, MessageMediaPhoto):
         return None
     buffer = io.BytesIO()
