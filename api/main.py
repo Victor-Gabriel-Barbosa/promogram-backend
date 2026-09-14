@@ -61,7 +61,7 @@ async def _rodar_scraper_tempo_real() -> None:
 async def acionar_scraper(
     background_tasks: BackgroundTasks,
     modo: str = "historico",
-    limite: int = 200,
+    limite: int = 100,
 ):
   if modo not in {"historico", "tempo_real"}:
     raise HTTPException(
